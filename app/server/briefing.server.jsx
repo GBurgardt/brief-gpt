@@ -10,7 +10,8 @@ const fs = require("fs");
 const ytdl = require("ytdl-core");
 const ffmpeg = require("fluent-ffmpeg");
 
-const audioPath = "audio.mp3";
+// const audioPath = "audio.mp3";
+const audioPath = "/tmp/audio.mp3";
 const progress = new EventEmitter();
 
 const FormDataNew = require("form-data");
@@ -139,7 +140,8 @@ export async function processAudio(url) {
   const promises = [];
 
   for (let start = 0; start < duration; start += segmentDuration) {
-    const segmentPath = `segment-${start}.mp3`;
+    // const segmentPath = `segment-${start}.mp3`;
+    const segmentPath = `/tmp/segment-${start}.mp3`;
     promises.push(
       processAudioSegment(segmentPath, start)
         .then(transcribeAudio)
