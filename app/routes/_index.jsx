@@ -8,6 +8,8 @@ export let action = async ({ request }) => {
   const formData = await request.formData();
   const youtubeUrl = formData.get("youtube-url");
 
+  console.log("youtubeUrl", youtubeUrl);
+
   try {
     return await processAudio(youtubeUrl);    
   } catch (error) {
