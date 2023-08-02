@@ -5,16 +5,19 @@
 const axios = require("axios");
 const { EventEmitter } = require("events");
 const segmentDuration = 300;
-const GPT_MODEL = "gpt-3.5-turbo-16k";
+
 const fs = require("fs");
 const ytdl = require("ytdl-core");
 const ffmpeg = require("fluent-ffmpeg");
 
-// const audioPath = "audio.mp3";
 const audioPath = "/tmp/audio.mp3";
 const progress = new EventEmitter();
 
 const FormDataNew = require("form-data");
+
+
+// const GPT_MODEL = "gpt-3.5-turbo-16k";
+const GPT_MODEL = "gpt-4";
 
 async function downloadAudio(url) {
   return new Promise((resolve, reject) => {
@@ -51,86 +54,102 @@ async function getAudioMetadata() {
 
 
 async function generateSummary(prompt, transcription) {
-  console.log("process.env.OPENAI_API_KEY", process.env.OPENAI_API_KEY);
+  try {
 
-  const payload = {
-    model: GPT_MODEL,
-    messages: [
-      {
-        role: "system",
-        content: prompt,
+    console.log("process.env.OPENAI_API_KEY", process.env.OPENAI_API_KEY);
+  
+    const payload = {
+      model: GPT_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: prompt,
+        },
+        {
+          role: "user",
+          content: transcription,
+        },
+      ],
+    };
+    const config = {
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      {
-        role: "user",
-        content: transcription,
-      },
-    ],
-  };
-  const config = {
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-  };
-
-  const response = await axios.post(
-    "https://api.openai.com/v1/chat/completions",
-    payload,
-    config
-  );
-
-  progress.emit("progress", {
-    stage: "summaryGenerated",
-    data: response.data["choices"][0]["message"]["content"],
-  });
-
-  return response.data["choices"][0]["message"]["content"];
+    };
+  
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      payload,
+      config
+    );
+  
+    progress.emit("progress", {
+      stage: "summaryGenerated",
+      data: response.data["choices"][0]["message"]["content"],
+    });
+  
+    return response.data["choices"][0]["message"]["content"];
+  }catch (error) {
+    console.error('Error en generateSummary:', error.response ? error.response.data : error.message);
+  }
 }
 
 async function generateHighlights(prompt, summaries) {
-  const combinedSummaries = summaries
-    .map(s => `Segmento ${s.segment}: ${s.summary}`)
-    .join("\n\n");
-  const payload = {
-    model: GPT_MODEL,
-    messages: [
-      {
-        role: "system",
-        content: prompt,
+  try {
+    const combinedSummaries = summaries
+      .map(s => `Segmento ${s.segment}: ${s.summary}`)
+      .join("\n\n");
+  
+    const payload = {
+      model: GPT_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: prompt,
+        },
+        {
+          role: "user",
+          content: combinedSummaries,
+        },
+      ],
+    };
+    const config = {
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      {
-        role: "user",
-        content: combinedSummaries,
-      },
-    ],
-  };
-  const config = {
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-  };
-  const response = await axios.post(
-    "https://api.openai.com/v1/chat/completions",
-    payload,
-    config
-  );
-  return response.data["choices"][0]["message"]["content"];
+    };
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      payload,
+      config
+    );
+    return response.data["choices"][0]["message"]["content"];
+  } catch (error) {
+    console.error('Error en generateHighlights:', error.response ? error.response.data : error.message);
+  }
 }
 
 function transcribeAudio(segmentPath) {
-  // let data = new FormData();
-  let data = new FormDataNew();
-  data.append("file", fs.createReadStream(segmentPath));
-  data.append("model", "whisper-1");
-  const config = {
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      ...data.getHeaders(),
-    },
-  };
-  return axios
-    .post("https://api.openai.com/v1/audio/transcriptions", data, config)
-    .then((response) => response.data.text)
-    .finally(() => fs.unlink(segmentPath, console.error));
+  try {
+
+    // let data = new FormData();
+    let data = new FormDataNew();
+    data.append("file", fs.createReadStream(segmentPath));
+    data.append("model", "whisper-1");
+    const config = {
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        ...data.getHeaders(),
+      },
+    };
+    return axios
+      .post("https://api.openai.com/v1/audio/transcriptions", data, config)
+      .then((response) => response.data.text)
+      .finally(() => fs.unlink(segmentPath, console.error));
+  } catch (error) {
+    console.error('Error en transcribeAudio:', error.response ? error.response.data : error.message);
+  }
+
 }
 
 
