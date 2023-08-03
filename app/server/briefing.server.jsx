@@ -23,9 +23,22 @@ async function downloadAudio(url) {
   return new Promise((resolve, reject) => {
     console.log("Iniciando descarga del audio de YouTube...");
     ytdl(url, { filter: "audioonly" })
-      .on("error", reject)
+      // .on("error", reject)
+      .on("error", () => {
+        console.log('Error en downloadAudio');
+        console.log('url:', url);
+        console.log('audioPath:', audioPath);
+        console.log('reject:', reject);
+        reject();
+      })
       .pipe(fs.createWriteStream(audioPath))
-      .on("finish", resolve);
+      // .on("finish", resolve);
+      .on("finish", () => {
+        console.log('Descarga finalizada');
+        console.log('resolve:', resolve);
+        
+        resolve();
+      });
   });
 }
 
