@@ -16,8 +16,8 @@ const progress = new EventEmitter();
 const FormDataNew = require("form-data");
 
 
-// const GPT_MODEL = "gpt-3.5-turbo-16k";
-const GPT_MODEL = "gpt-4";
+const GPT_MODEL = "gpt-3.5-turbo-16k";
+// const GPT_MODEL = "gpt-4";
 
 async function downloadAudio(url) {
   return new Promise((resolve, reject) => {
